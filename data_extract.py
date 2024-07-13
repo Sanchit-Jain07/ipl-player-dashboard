@@ -22,6 +22,8 @@ def get_all_players():
 
 def season_wise_batting_stats(player_matches, player):
     stats = {}
+    deliveries = session.query(Deliveries).filter_by(batter_id=player.id)
+    deliveries_df = pd.read_sql(deliveries.statement, deliveries.session.bind)
     for match in player_matches:
         if match.season not in stats:
             stats[match.season] = {
@@ -33,14 +35,11 @@ def season_wise_batting_stats(player_matches, player):
                 "fifties": 0,
                 "hundreds": 0
             }
-        match_id = match.match_id
-        deliveries = session.query(Deliveries).filter_by(match_id=match_id, batter_id=player.id)
-        deliveries_df = pd.read_sql(deliveries.statement, deliveries.session.bind)
-        player_runs = deliveries_df["runs"].sum()
-        player_balls = deliveries_df[deliveries_df["extras_type"] != "wides"].shape[0]
-        player_fours = deliveries_df[deliveries_df["runs"]==4].shape[0]
-        player_sixes = deliveries_df[deliveries_df["runs"]==6].shape[0]
-        player_outs = deliveries_df[deliveries_df["player_out_id"]==player.id].shape[0]
+        player_runs = deliveries_df[deliveries_df["match_id"]==match.match_id]["runs"].sum()
+        player_balls = deliveries_df[(deliveries_df["extras_type"] != "wides") & (deliveries_df["match_id"]==match.match_id)].shape[0]
+        player_fours = deliveries_df[(deliveries_df["runs"]==4) & (deliveries_df["match_id"]==match.match_id)].shape[0]
+        player_sixes = deliveries_df[(deliveries_df["runs"]==6) & (deliveries_df["match_id"]==match.match_id)].shape[0]
+        player_outs = deliveries_df[(deliveries_df["player_out_id"]==player.id) & (deliveries_df["match_id"]==match.match_id)].shape[0]
         if player_runs >= 50 and player_runs < 100:
             stats[match.season]["fifties"] += 1
         if player_runs >= 100:
@@ -57,6 +56,8 @@ def season_wise_batting_stats(player_matches, player):
 def season_wise_bowling_stats(player_matches, player):
     stats = {}
     wicket_types = ["bowled", "caught", "lbw", "stumped", "caught and bowled", "hit wicket"]
+    deliveries = session.query(Deliveries).filter_by(bowler_id=player.id)
+    deliveries_df = pd.read_sql(deliveries.statement, deliveries.session.bind)
     for match in player_matches:
         if match.season not in stats:
             stats[match.season] = {
@@ -64,13 +65,10 @@ def season_wise_bowling_stats(player_matches, player):
                 "runs": 0,
                 "wickets": 0
             }
-        match_id = match.match_id
-        deliveries = session.query(Deliveries).filter_by(match_id=match_id, bowler_id=player.id)
-        deliveries_df = pd.read_sql(deliveries.statement, deliveries.session.bind)
-        player_runs = deliveries_df["runs"].sum() 
-        player_runs += deliveries_df[(deliveries_df["extras_type"] != "byes") & (deliveries_df["extras_type"] != "legbyes")]["extras"].sum()
-        player_balls = deliveries_df[(deliveries_df["extras_type"] != "wides") & (deliveries_df["extras_type"] != "noballs")].shape[0]
-        player_wickets = deliveries_df[deliveries_df["wicket"].isin(wicket_types)].shape[0]
+        player_runs = deliveries_df[deliveries_df["match_id"]==match.match_id]["runs"].sum()
+        player_runs += deliveries_df[(deliveries_df["extras_type"] != "byes") & (deliveries_df["extras_type"] != "legbyes") & (deliveries_df["match_id"] == match.match_id)]["extras"].sum()
+        player_balls = deliveries_df[(deliveries_df["extras_type"] != "wides") & (deliveries_df["extras_type"] != "noballs") & (deliveries_df["match_id"] == match.match_id)].shape[0]
+        player_wickets = deliveries_df[(deliveries_df["wicket"].isin(wicket_types)) & (deliveries_df["match_id"] == match.match_id)].shape[0]
         stats[match.season]["runs"] += player_runs
         stats[match.season]["balls"] += player_balls
         stats[match.season]["wickets"] += player_wickets
