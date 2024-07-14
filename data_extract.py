@@ -119,13 +119,12 @@ def match_number(player):
     return len(player_matches)
 
 def get_player_espn_id(player_name):
-    player = session.query(Players).filter_by(name=player_name).first()
-    with open("people.csv") as file:
+    with open("player_espn_ids.csv") as file:
         player_df = pd.read_csv(file)
-        player_row = player_df[player_df["name"] == player_name]
+        player_row = player_df[player_df["Player Name"] == player_name]
         if player_row.empty:
             return None
-        return int(player_row["key_cricinfo"].values[0])
+        return int(player_row["ESPN ID"].values[0])
     
 def get_player_meta(player_espn_id):
     data = requests.get(f"https://www.espncricinfo.com/*/content/player/{player_espn_id}.html")
@@ -163,3 +162,4 @@ def get_player_teams(player_name):
         team = session.query(Teams).filter_by(id=team_id).first()
         team_names[player_team.season] = team.name
     return team_names
+
