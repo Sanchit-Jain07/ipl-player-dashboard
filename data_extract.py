@@ -9,7 +9,7 @@ import streamlit as st
 DATABASE_URL = f"postgresql://{st.secrets['DATABASE_USER']}"\
                f":{st.secrets['DATABASE_PASSWORD']}"\
                f"@{st.secrets['DATABASE_HOST']}"\
-               f"/{st.secrets['DATABASE_NAME']}"
+               f"/{st.secrets['DATABASE_NAME']}?sslmode=require"
 
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
